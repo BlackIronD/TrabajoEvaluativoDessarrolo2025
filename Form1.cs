@@ -1,14 +1,15 @@
-﻿using System;
+using MySql.Data.MySqlClient;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using MySql.Data.MySqlClient;
 
 
 
@@ -135,21 +136,37 @@ namespace TrabajoEvaluativo_Laboratoria
             string telefono = TelefonoTXT.Text.Trim();
             int activo = ActivoBTN.Checked ? 1 : 0;
 
+            
+            string fechaTexto = DiagnositcoTxt.Text ?? "";
+            fechaTexto = fechaTexto.Trim();
+           
             DateTime fechaNac;
-            if (!DateTime.TryParse(DiagnositcoTxt.Text.Trim(), out fechaNac))
+            string[] formatos = new[]
             {
-                MessageBox.Show("Fecha de nacimiento inválida. Usa formato yyyy-MM-dd.");
-                return;
+        "yyyy-MM-dd",
+        "yyyy-MM-dd HH:mm:ss",
+        "yyyy-MM-ddTHH:mm:ss", 
+        "dd/MM/yyyy",
+        "d/M/yyyy",
+        "dd-MM-yyyy",
+        "yyyy/MM/dd",
+        "M/d/yyyy",
+        "yyyyMMdd"
+    };
+            if (DateTime.TryParseExact(fechaTexto, formatos, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out fechaNac))
+            {
+                // ok
             }
-
+            
+           
             if (string.IsNullOrEmpty(nombre))
             {
                 MessageBox.Show("El nombre de la mascota es obligatorio.");
                 return;
             }
 
+            
             string conexion = "Server=localhost;User ID=root;Password=;Database=veterinaria_db";
-
             string consulta = @"
         INSERT INTO mascotas (nombre, especie, raza, fechaNac, nombreDue, telefono, activo)
         VALUES (@nombre, @especie, @raza, @fechaNac, @nombreDue, @telefono, @activo);
@@ -163,7 +180,10 @@ namespace TrabajoEvaluativo_Laboratoria
                     cmd.Parameters.AddWithValue("@nombre", nombre);
                     cmd.Parameters.AddWithValue("@especie", especie);
                     cmd.Parameters.AddWithValue("@raza", raza);
-                    cmd.Parameters.AddWithValue("@fechaNac", fechaNac.ToString("yyyy-MM-dd"));
+
+                   
+                    cmd.Parameters.Add("@fechaNac", MySqlDbType.Date).Value = fechaNac.Date;
+
                     cmd.Parameters.AddWithValue("@nombreDue", duenio);
                     cmd.Parameters.AddWithValue("@telefono", telefono);
                     cmd.Parameters.AddWithValue("@activo", activo);
@@ -173,14 +193,14 @@ namespace TrabajoEvaluativo_Laboratoria
                     if (filasAfectadas > 0)
                     {
                         MessageBox.Show("Mascota agregada correctamente.");
-                        cargarMascotas(); // Recarga el grid
+                        cargarMascotas();
                     }
                     else
                     {
                         MessageBox.Show("No se pudo agregar la mascota.");
                     }
 
-                    // Limpiar TextBox y RadioButton
+                 
                     NombreTXT.Text = string.Empty;
                     RazaTXT.Text = string.Empty;
                     EspecieTXT.Text = string.Empty;
@@ -291,7 +311,7 @@ namespace TrabajoEvaluativo_Laboratoria
                     cmd.Parameters.AddWithValue("@nombre", NombreTXT.Text.Trim());
                     cmd.Parameters.AddWithValue("@raza", RazaTXT.Text.Trim());
                     cmd.Parameters.AddWithValue("@especie", EspecieTXT.Text.Trim());
-                    cmd.Parameters.AddWithValue("@fechaNac", fechaNac.ToString("yyyy-MM-dd"));
+                    cmd.Parameters.AddWithValue("@fechaNac", fechaNac.ToString(""));
                     cmd.Parameters.AddWithValue("@nombreDue", DueNameTXT.Text.Trim());
                     cmd.Parameters.AddWithValue("@telefono", TelefonoTXT.Text.Trim());
                     cmd.Parameters.AddWithValue("@activo", ActivoBTN.Checked ? 1 : 0);
